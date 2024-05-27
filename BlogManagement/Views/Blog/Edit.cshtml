@@ -1,0 +1,184 @@
+﻿@using BlogManagement.Models.ViewModel
+@model BlogVM
+@{
+    ViewData["Title"] = "Edit Blog Post";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<form id="blogForm" asp-action="Edit" method="post" enctype="multipart/form-data">
+    <input type="hidden" asp-for="Id" />
+    <div class="form-group">
+        <label asp-for="Title"></label>
+        <input id="Title" asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Content"></label>
+        <textarea id="Content" asp-for="Content" class="form-control"></textarea>
+        <span asp-validation-for="Content" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="CategoryId"></label>
+        <select id="CategoryId" asp-for="CategoryId" class="form-control" asp-items="ViewBag.Categories"></select>
+        <span asp-validation-for="CategoryId" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="BlogPhotoBase64">Profile Picture</label>
+        <div class="custom-file">
+            <input type="file" class="custom-file-input" id="blogPhoto" name="blogPhotoFile" onchange="previewImage(event)">
+            <label class="custom-file-label" for="blogPhoto">Choose file</label>
+        </div>
+    </div>
+    <div class="form-group">
+        @if (!string.IsNullOrEmpty(Model.BlogPhotoBase64))
+        {
+            <img src="data:image;base64,@Model.BlogPhotoBase64" id="preview" class="img-thumbnail" style="max-width: 150px; max-height: 150px;" />
+        }
+        else
+        {
+            <img id="preview" class="img-thumbnail" style="max-width: 150px; max-height: 150px;" />
+        }
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+</form>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/3.1.18/signalr.min.js"></script>
+    <script src="https://cdn.ckeditor.com/ckeditor5/34.0.0/classic/ckeditor.js"></script>
+
+    <script type="text/javascript">
+        const blogPostId = '@Model.Id';
+        const delayDuration = 3000; // 3 seconds delay
+
+        $(document).ready(function () {
+            function MyCustomUploadAdapterPlugin(editor) {
+                editor.plugins.get('FileRepository').createUploadAdapter = (loader) => {
+                    return new MyUploadAdapter(loader);
+                };
+            }
+
+            class MyUploadAdapter {
+                constructor(loader) {
+                    this.loader = loader;
+                }
+
+                upload() {
+                    return this.loader.file
+                        .then(file => new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                                resolve({ default: reader.result });
+                            };
+                            reader.onerror = error => {
+                                reject(error);
+                            };
+                            reader.readAsDataURL(file);
+                        }));
+                }
+
+                abort() {
+                }
+            }
+
+            ClassicEditor
+                .create(document.querySelector('#Content'), {
+                    extraPlugins: [MyCustomUploadAdapterPlugin],
+                    toolbar: {
+                        items: [
+                            'heading', '|',
+                            'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|',
+                            'insertTable', 'uploadImage', 'mediaEmbed', '|',
+                            'undo', 'redo', '|',
+                            'resizeImage', 'imageResize', 'imageResizeHandles'
+                        ]
+                    },
+                    image: {
+                        toolbar: [
+                            'imageTextAlternative', 'imageStyle:full', 'imageStyle:side', 'resizeImage:50', 'resizeImage:75', 'resizeImage:original', 'imageResize', 'imageResizeHandles'
+                        ],
+                        resizeOptions: [
+                            {
+                                name: 'resizeImage:original',
+                                value: null,
+                                icon: 'original',
+                                label: 'Original'
+                            },
+                            {
+                                name: 'resizeImage:50',
+                                value: '50',
+                                icon: 'medium',
+                                label: '50%'
+                            },
+                            {
+                                name: 'resizeImage:75',
+                                value: '75',
+                                icon: 'large',
+                                label: '75%'
+                            }
+                        ],
+                        styles: [
+                            'full',
+                            'side'
+                        ]
+                    },
+                    simpleUpload: {
+                        uploadUrl: '/upload',
+                        withCredentials: true,
+                        headers: {
+                            'X-CSRF-TOKEN': 'CSRF-Token',
+                            Authorization: 'Bearer <JSON Web Token>'
+                        }
+                    }
+                })
+                .then(editor => {
+                    window.editor = editor;
+
+                    const connection = new signalR.HubConnectionBuilder()
+                        .withUrl("/blogHub")
+                        .build();
+
+                    connection.start().then(function () {
+                        connection.invoke("JoinGroup", blogPostId);
+                    }).catch(err => console.error(err.toString()));
+
+                    let updateTimeout;
+
+                    $("#Content").on("input", function () {
+                        clearTimeout(updateTimeout); // Clear existing timeout
+                        updateTimeout = setTimeout(sendUpdate, delayDuration);
+                    });
+
+                    function sendUpdate() {
+                        const content = $("#Content").val();
+                        connection.invoke("SendUpdate", blogPostId, content).catch(err => console.error(err.toString()));
+                    }
+
+                    window.addEventListener("beforeunload", function () {
+                        connection.invoke("LeaveGroup", blogPostId).catch(err => console.error(err.toString()));
+                    });
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        });
+
+        function previewImage(event) {
+            var input = event.target;
+            var label = input.nextElementSibling;
+            var fileName = input.files[0].name;
+
+            label.innerText = fileName;
+
+            var reader = new FileReader();
+            reader.onload = function () {
+                var img = document.getElementById('preview');
+                img.src = reader.result;
+                img.style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    </script>
+}
+

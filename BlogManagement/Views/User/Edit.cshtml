@@ -1,0 +1,53 @@
+﻿@using BlogManagement.Models.ViewModel
+@model EditUserVM
+
+<h2 class="mb-4">Edit User Profile</h2>
+<form asp-action="Edit" method="post" enctype="multipart/form-data">
+    <div class="form-group">
+        <label for="firstName">First Name</label>
+        <input id="firstName" asp-for="FirstName" class="form-control" />
+        <span asp-validation-for="FirstName" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label for="lastName">Last Name</label>
+        <input id="lastName" asp-for="LastName" class="form-control" />
+        <span asp-validation-for="LastName" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label for="profilePicture">Profile Picture</label>
+        <div class="custom-file">
+            <input type="file" class="custom-file-input" id="profilePicture" name="profilePictureFile" onchange="previewImage(event)">
+            <label class="custom-file-label" for="profilePicture">Choose file</label>
+        </div>
+    </div>
+                    
+    <div class="form-group">
+        @if (!string.IsNullOrEmpty(Model.ProfilePictureBase64))
+        {
+            <img src="data:image;base64,@Model.ProfilePictureBase64" id="preview" class="img-thumbnail" style="max-width: 150px; max-height: 150px;" />
+        }else{
+            <img id="preview" class="img-thumbnail" style="max-width: 150px; max-height: 150px;" />
+        }
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Save</button>
+</form>
+@section Scripts {
+    <script>
+        function previewImage(event) {
+            var input = event.target;
+            var label = input.nextElementSibling;
+            var fileName = input.files[0].name;
+
+            label.innerText = fileName;
+
+            var reader = new FileReader();
+            reader.onload = function () {
+                var img = document.getElementById('preview');
+                img.src = reader.result;
+                img.style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+    </script>
+}

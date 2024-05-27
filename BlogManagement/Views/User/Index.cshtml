@@ -1,0 +1,38 @@
+﻿@model ApplicationUser
+@{
+    ViewData["Title"] = "Profile";
+    var profilePictureBase64 = ViewBag.ProfilePictureBase64 as string;
+}
+<style>
+    #userPic {
+                width: 100px;
+                object-fit: cover;
+            }
+</style>
+<div class="row mt-5">
+    <div class="col-md-4 offset-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                @if (profilePictureBase64 != null)
+                {
+                    <img src="data:image;base64,@profilePictureBase64" class="img-fluid rounded-circle mb-3" id="userPic" alt="Profile Picture" />
+                }
+                else
+                {
+                    <div class="text-muted">
+                        <i class="fas fa-user-circle fa-7x"></i>
+                    </div>
+                }
+                <h3 class="card-title">@Model.FirstName @Model.LastName</h3>
+                <p class="card-text text-muted">@Model.UserName</p>
+                <hr />
+                <div class="text-left">
+                    <p><strong>Email:</strong> @Model.Email</p>
+                    <p><strong>First Name:</strong> @Model.FirstName</p>
+                    <p><strong>Last Name:</strong> @Model.LastName</p>
+                    <a href="@Url.Action("Edit", "User")" class="btn btn-primary text-left">Edit Details</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

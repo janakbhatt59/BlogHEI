@@ -1,0 +1,44 @@
+﻿@using BlogManagement.Models.ViewModel
+@model CategoryVM
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<form id="editForm" asp-action="Edit">
+    <input type="hidden" asp-for="Id" />
+    <div class="form-group">
+        <label asp-for="Name" class="control-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <input type="submit" value="Save" class="btn btn-primary" />
+    </div>
+</form>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.3/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $("#editForm").validate({
+                rules: {
+                    Name: {
+                        required: true,
+                        maxlength: 100
+                    }
+                },
+                messages: {
+                    Name: {
+                        required: "Please enter the category name",
+                        maxlength: "Category name cannot exceed 100 characters"
+                    }
+                }
+            });
+        });
+    </script>
+}

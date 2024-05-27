@@ -1,0 +1,22 @@
+﻿@using BlogManagement.Models.ViewModel
+@model ConfirmEmailVM
+
+@{
+    ViewData["Title"] = "Confirm Email";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title text-center">Email Confirmation</h2>
+                    <p class="text-center">@Model.StatusMessage</p>
+                    <div class="text-center">
+                        <a href="@Url.Action("Index", "Home")" class="btn btn-primary">Return to Home</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

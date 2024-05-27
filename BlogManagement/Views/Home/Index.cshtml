@@ -1,0 +1,142 @@
+﻿@using BlogManagement.Models.ViewModel
+@model PagedDataItem<BlogPostVM>
+@{
+    ViewData["Title"] = "Home Page Blog";
+}
+<style>
+    .card {
+        height: 350px;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #ddd;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+        text-decoration: none;
+        color: inherit;
+    }
+
+        .card:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid grey;
+        }
+
+    .card-img-top {
+        height: 150px;
+        width: 100%;
+        object-fit: cover;
+        background-color: #f8f9fa;
+    }
+
+    .card-body {
+        overflow: hidden;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 15px;
+    }
+
+    .card-title {
+        margin-bottom: 5px;
+        font-size: 1.25rem;
+        font-weight: bold;
+    }
+
+    .card-category {
+        font-size: 0.9rem;
+        color: #007bff;
+        margin-bottom: 10px;
+        margin-left: 5px;
+    }
+
+    .card-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        max-height: 100%;
+        margin-bottom: 5px;
+    }
+
+    .postBy {
+        display: flex;
+        margin-bottom: 15px;
+    }
+
+    .postByImg {
+        width: 35px;
+        margin-right: 10px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .post-text {
+        flex: 1;
+        text-align: left;
+    }
+</style>
+<div id="blogPosts" class="row mb-4">
+    @foreach (var post in Model.Data)
+    {
+        <div class="col-md-4 mb-4">
+            <a href="@Url.Action("Details", "Blog", new { id = post.BlogVM.Id })" class="card">
+                @if (!string.IsNullOrEmpty(post.BlogVM.BlogPhotoBase64))
+                {
+                    <img src="data:image/jpeg;base64,@post.BlogVM.BlogPhotoBase64" class="card-img-top" alt="@post.BlogVM.Title" />
+                }
+                <div class="card-body d-flex flex-column">
+                    <div class="card-title">@post.BlogVM.Title <span class="card-category">@post.BlogVM.Category?.Name</span></div>
+                    <div class="card-text">@Html.Raw(post.BlogVM.Content)</div>
+                </div>
+                <div class="card-footer text-muted">
+                    <div class="postBy">
+                        <img src="data:image/jpeg;base64,@post.PostedByUserProfilePic" alt="Post image" class="postByImg">
+                        <div class="post-text">
+                            <div><strong>By: @post.PostedByName</strong></div>
+                            <div><i>@post.BlogVM.PublishedAt?.ToString("MMMM dd, yyyy HH:mm")</i></div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    }
+</div>
+<div id="divPager" style="display:none"></div>
+@section Scripts {
+    <script src="~/js/pagination.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="~/js/pagination.js"></script>
+    <script>
+        $(document).ready(function () {
+            function bindPager() {
+                $('#divPager').pagination({
+                    pageNo: @Model.Pager.PageNo,
+                    itemsPerPage: @Model.Pager.ItemsPerPage,
+                    pagePerDisplay: 5,
+                    totalNextPages: @Model.Pager.TotalNextPages,
+                    totalRecords: @Model.Pager.TotalRecords,
+                    callback: function (pageNumber) {
+                        var url = window.location.pathname + '?pageNumber=' + pageNumber + '&itemsPerPage=' + @Model.Pager.ItemsPerPage;
+                        window.location.href = url;
+                    }
+                });
+                $('#divPager').show();
+            }
+            bindPager();
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl("/blogHub")
+                .build();
+
+            connection.on("ReceiveUpdate", function (blogId) {
+                location.reload();
+            });
+
+            connection.start().catch(function (err) {
+                return console.error(err.toString());
+            });
+        });
+    </script>
+}

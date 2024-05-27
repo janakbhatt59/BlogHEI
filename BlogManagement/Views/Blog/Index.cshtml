@@ -1,0 +1,128 @@
+﻿@using BlogManagement.Models.ViewModel
+@model PagedDataItem<BlogVM>
+
+@{
+    ViewData["Title"] = "Blog Posts";
+    var userRole = ViewBag.UserRole as string;
+}
+
+<h2>@ViewData["Title"]</h2>
+<div class="mb-3">
+    <a asp-action="Create" class="btn btn-primary">Create Blog</a>
+    <a asp-action="Index" asp-route-showOnlyDraft="true" class="btn btn-secondary">
+        Draft Blogs
+        @if (ViewBag.DraftCount > 0)
+        {
+            <span class="badge badge-light">@ViewBag.DraftCount</span>
+        }
+    </a>
+    @if (User.Identity.IsAuthenticated)
+    {
+        @if (userRole == "Admin")
+        {
+            <a asp-controller="Category" asp-action="Index" class="btn btn-info">Category</a>
+        }
+    }
+</div>
+<form asp-controller="Blog" asp-action="Index" method="get">
+    <div class="row">
+        <div class="col-4 ml-2">
+            <div class="form-group row">
+                <label class="col-3" for="categoryId">Category:</label>
+                <select id="categoryId" name="categoryId" class="form-control col-9">
+                    <option value="">All Categories</option>
+                    @foreach (var category in (SelectList)ViewData["Categories"])
+                    {
+                        <option value="@category.Value">@category.Text</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="col-4 ml-2">
+            <div class="form-group row">
+                <label class="col-3" for="Title">Title:</label>
+                <input id="title" name="Title" class="form-control col-9" placeholder="Blog title"/>
+            </div>
+        </div>
+        <div class="col-2">
+            <button type="submit" class="btn btn-primary">filter</button>
+        </div>
+    </div>
+</form>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Data.First().BlogPhotoBase64)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Data.First().Title)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Data.First().Category.Name)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Data.First().CreatedDate)
+            </th>
+            <th>
+                Action
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.Data)
+        {
+            <tr>
+                <td>
+                    @if (!string.IsNullOrEmpty(item.BlogPhotoBase64))
+                    {
+                        <img src="data:image;base64,@item.BlogPhotoBase64" id="preview" class="img-thumbnail" style="max-width: 55px; max-height: 50px;" />
+                    }
+                    else
+                    {
+                        <img id="preview" class="img-thumbnail" style="max-width: 55px; max-height: 50px;" />
+                    }
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Title)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Category.Name)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.CreatedDate)
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+                    <a asp-action="Delete" asp-route-id="@item.Id" onclick="return confirm('Are you sure you want to delete this Blog?');">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<div id="divPager" style="display:none"></div>
+@section Scripts {
+    <script src="~/js/pagination.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="~/js/pagination.js"></script>
+<script>
+    $(document).ready(function () {
+        function bindPager() {
+            $('#divPager').pagination({
+                pageNo: @Model.Pager.PageNo,
+                itemsPerPage: @Model.Pager.ItemsPerPage,
+                pagePerDisplay: 5,
+                totalNextPages: @Model.Pager.TotalNextPages,
+                totalRecords: @Model.Pager.TotalRecords,
+                callback: function (pageNumber) {
+                    var url = window.location.pathname + '?pageNumber=' + pageNumber + '&itemsPerPage=' + @Model.Pager.ItemsPerPage;
+                    window.location.href = url;
+                }
+            });
+            $('#divPager').show();
+        }
+        bindPager();
+    });
+</script>
+}

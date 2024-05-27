@@ -1,0 +1,36 @@
+﻿@model BlogManagement.Models.ViewModel.BlogVM
+@{
+    ViewData["Title"] = "Blog Details";
+}
+<style>
+    #blogImg{
+        height: 400px;
+        object-fit: cover;
+    }
+</style>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title">@Model.Title</h5>
+    </div>
+    <div class="card-body">
+        @if (!string.IsNullOrEmpty(Model.BlogPhotoBase64))
+        {
+            <img src="data:image/jpeg;base64,@Model.BlogPhotoBase64" class="card-img-top" id="blogImg" alt="Blog Photo" />
+        }
+        <div class="card-text">
+            @Html.Raw(Model.Content)
+        </div>
+        <div class="card-footer">
+            <div class="row">
+                <div class="col-sm-6">
+                    <p><strong>Published At:</strong> @Model.PublishedAt?.ToString("MMMM dd, yyyy HH:mm")</p>
+                    <p><strong>Category:</strong> @Model.Category?.Name</p>
+                </div>
+                <div class="col-sm-6 text-right">
+                    <p><strong>Created Date:</strong> @Model.CreatedDate?.ToString("MMMM dd, yyyy HH:mm")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
