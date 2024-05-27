@@ -4,6 +4,7 @@ using BlogManagement.Models.Entity;
 using BlogManagement.Models.ViewModel;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
@@ -19,15 +20,27 @@ namespace BlogManagement.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index(int pageNumber = 1, int itemsPerPage = 10)
+        public async Task<IActionResult> Index(string? titleSearch, int? categoryId, int pageNumber = 1, int itemsPerPage = 10)
         {
             try
             {
-
                 IQueryable<Blog> blogQuery = _context.Blog
                     .Where(bp => !bp.IsDeleted && !bp.IsDraft)
                     .Include(bp => bp.Category)
                     .Include(bp => bp.User);
+
+                // Apply title search filter if provided
+                if (!string.IsNullOrEmpty(titleSearch))
+                {
+                    blogQuery = blogQuery.Where(bp => bp.Title.Contains(titleSearch));
+                }
+
+                // Apply category filter if provided
+                if (categoryId.HasValue && categoryId > 0)
+                {
+                    blogQuery = blogQuery.Where(bp => bp.CategoryId == categoryId);
+                }
+
                 int totalRecords = await blogQuery.CountAsync();
                 int skip = (pageNumber - 1) * itemsPerPage;
 
@@ -50,6 +63,7 @@ namespace BlogManagement.Controllers
                     ItemsPerPage = itemsPerPage,
                     TotalRecords = totalRecords
                 };
+                ViewData["Categories"] = new SelectList(_context.Categories.Where(c => !c.IsDeleted), "Id", "Name");
 
                 return View(new PagedDataItem<BlogPostVM> { Data = data, Pager = pager });
             }
@@ -58,6 +72,7 @@ namespace BlogManagement.Controllers
                 throw ex;
             }
         }
+
 
         private BlogVM ToBlogVM(Blog blog)
         {

@@ -77,7 +77,48 @@
         flex: 1;
         text-align: left;
     }
+
+    .filter-form {
+        display: none;
+    }
 </style>
+<div class="row justify-content-end mb-4">
+    <div class="col-auto">
+        <button id="showFilterBtn" class="btn btn-primary mb-3">Filter</button>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <form id="filterForm" asp-controller="Home" asp-action="Index" method="get" class="mb-3 filter-form" style="display: none;">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="categoryId">Category:</label>
+                        <select id="categoryId" name="categoryId" class="form-control">
+                            <option value="">All Categories</option>
+                            @foreach (var category in (SelectList)ViewData["Categories"])
+                            {
+                                <option value="@category.Value">@category.Text</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="title">Search by Title:</label>
+                        <input id="title" name="titleSearch" class="form-control" placeholder="Enter title keywords" />
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <br />
+                    <button type="submit" class="btn btn-primary btn-block">Search</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div id="blogPosts" class="row mb-4">
     @foreach (var post in Model.Data)
     {
@@ -111,6 +152,9 @@
     <script src="~/js/pagination.js"></script>
     <script>
         $(document).ready(function () {
+                $('#showFilterBtn').click(function () {
+                    $('#filterForm').toggle('fast');
+                });
             function bindPager() {
                 $('#divPager').pagination({
                     pageNo: @Model.Pager.PageNo,
