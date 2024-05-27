@@ -16,13 +16,6 @@
 # Mono auto generated files
 mono_crash.*
 
-#Appsetting
-appsettings.json
-
-#Appsetting
-appsettings.json
-/src/Migration/appsettings.json
-
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
