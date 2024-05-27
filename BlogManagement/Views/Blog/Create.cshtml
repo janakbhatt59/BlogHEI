@@ -49,6 +49,7 @@
 
     <script type="text/javascript">
         const blogPostId = '@Model.Id';
+        const saveDraftUrl = '@Url.Action("SaveDraft", "Blog")';
 
         $(document).ready(function () {
             function MyCustomUploadAdapterPlugin(editor) {
@@ -148,61 +149,101 @@
                     editor.model.document.on('change:data', () => {
                         const content = editor.getData();
                         connection.invoke("SendUpdate", blogPostId, content).catch(err => console.error(err.toString()));
+                        saveDraftLocally();
+                        // saveDraft(true);
                     });
 
-                    window.addEventListener("beforeunload", function () {
+                    window.addEventListener("beforeunload", function (event) {
+                        saveDraftBeforeUnload();
                         connection.invoke("LeaveGroup", blogPostId).catch(err => console.error(err.toString()));
+                    });
+
+                    window.addEventListener('offline', function () {
+                        saveDraftLocally();
                     });
                 })
                 .catch(error => {
                     console.error(error);
                 });
 
-            window.onbeforeunload = function () {
-                autoSaveDraft(true);
-            };
+            // loadDraftFromLocalStorage();
         });
+
+        function saveDraftLocally() {
+            const title = $("#Title").val();
+            const content = window.editor.getData();
+            const categoryId = $("#CategoryId").val();
+
+            const draft = {
+                title: title,
+                content: content,
+                categoryId: categoryId
+            };
+
+            localStorage.setItem("blogDraft", JSON.stringify(draft));
+        }
+
+        // function loadDraftFromLocalStorage() {
+        //     const draft = JSON.parse(localStorage.getItem("blogDraft"));
+        //     if (draft) {
+        //         $("#Title").val(draft.title);
+        //         window.editor.setData(draft.content);
+        //         $("#CategoryId").val(draft.categoryId);
+        //     }
+        // }
+
+        function saveDraftBeforeUnload() {
+            saveDraft(false);
+        }
+
+        function saveDraft(isUnload = false) {
+            if (isFormDirty()) {
+                const title = $("#Title").val();
+                const content = window.editor.getData();
+                const categoryId = $("#CategoryId").val();
+
+                const data = new FormData();
+                data.append("Id", blogPostId);
+                data.append("Title", title);
+                data.append("Content", content);
+                data.append("CategoryId", categoryId);
+
+                if (isUnload) {
+                    navigator.sendBeacon(saveDraftUrl, data);
+                } else {
+                    $.ajax({
+                        url: saveDraftUrl,
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        data: {
+                            Id: blogPostId,
+                            Title: title,
+                            Content: content,
+                            CategoryId: categoryId,
+                        },
+                        success: function (response) {
+                            console.log("Draft saved successfully.");
+                        },
+                        error: function (xhr, status, error) {
+                            if (xhr.status === 401) {
+                                alert("You are not authorized to perform this action. Please log in.");
+                                window.location.href = '/Account/Login';
+                            } else {
+                                console.error("Error saving draft: " + error);
+                            }
+                        }
+                    });
+                }
+            }
+        }
 
         function isFormDirty() {
             const title = document.getElementById("Title").value;
             const content = window.editor.getData();
             return title.trim() !== "" || content.trim() !== "";
         }
-
-        function autoSaveDraft(isUnload = false) {
-            if (isFormDirty()) {
-                const title = $("#Title").val();
-                const content = window.editor.getData();
-                const categoryId = $("#CategoryId").val();
-
-                $.ajax({
-                    url: '@Url.Action("SaveDraft", "Blog")',
-                    method: 'POST',
-                    headers: {
-                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                    },
-                    data: {
-                        Id: blogPostId,
-                        Title: title,
-                        Content: content,
-                        CategoryId: categoryId,
-                    },
-                    async: !isUnload,
-                    success: function (response) {
-                        console.log("Draft saved successfully.");
-                    },
-                    error: function (xhr, status, error) {
-                        if (xhr.status === 401) {
-                            alert("You are not authorized to perform this action. Please log in.");
-                            window.location.href = '/Account/Login';
-                        } else {
-                            console.error("Error saving draft: " + error);
-                        }
-                    }
-                });
-            }
-        }
-
 
         function previewImage(event) {
             var input = event.target;

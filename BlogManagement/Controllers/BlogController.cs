@@ -260,7 +260,11 @@ public class BlogController : Controller
                 existingBlogPost.CategoryId = blogPost.CategoryId;
                 existingBlogPost.UpdatedDate = DateTime.UtcNow;
                 existingBlogPost.UpdatedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                existingBlogPost.IsDraft = false;
+                if (existingBlogPost.IsDraft)
+                {
+                    existingBlogPost.IsDraft = false;
+                    existingBlogPost.PublishedAt = DateTime.UtcNow;
+                }
                 if (blogPhotoFile != null && blogPhotoFile.Length > 0)
                 {
                     using (var memoryStream = new MemoryStream())
